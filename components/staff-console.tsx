@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { QueueWiseMark } from '@/components/queuewise-mark'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Appointment, Clinic, Schedule } from '@/lib/types'
@@ -230,7 +231,7 @@ export function StaffConsole() {
   if (loading) return <p className="page-state">Loading business workspace…</p>
 
   return <div className="portal-layout staff-layout">
-    <aside className="portal-side"><Link className="wordmark" href="/"><span className="wordmark-mark" />QueueWise</Link><p>{currentRole ? `Business ${currentRole === 'doctor' ? 'service provider' : currentRole}` : 'Business workspace'}</p><Link className="link-button" href="/patient">Customer queue</Link><button className="link-button" onClick={signOut}>Sign out</button></aside>
+    <aside className="portal-side"><Link className="wordmark" href="/"><QueueWiseMark className="queuewise-mark" />QueueWise</Link><p>{currentRole ? `Business ${currentRole === 'doctor' ? 'service provider' : currentRole}` : 'Business workspace'}</p><Link className="link-button" href="/patient">Customer queue</Link><button className="link-button" onClick={signOut}>Sign out</button></aside>
     <main className="portal-main">
       <header className="portal-title"><div><p className="eyebrow">Business operations</p><h1>{currentRole === 'doctor' ? 'Service view' : currentRole === 'admin' ? 'Business admin' : 'Today’s queue'}</h1></div></header>
       {error && <p className="form-message error" role="alert">{error}</p>}{message && <p className="form-message" role="status">{message}</p>}

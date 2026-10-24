@@ -9,7 +9,7 @@ button:disabled { cursor: not-allowed; opacity: .62; }
 .shell { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
 .site-header { min-height: 84px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); }
 .wordmark { display: inline-flex; align-items: center; gap: 9px; color: var(--forest); font-size: 20px; font-weight: 800; letter-spacing: -.03em; }
-.wordmark-mark { width: 15px; height: 15px; display: inline-block; background: var(--forest); box-shadow: 5px 5px 0 var(--clay); }
+.queuewise-mark { display: block; width: 28px; height: 28px; flex: none; }
 nav { display: flex; align-items: center; gap: 24px; font-size: 14px; font-weight: 650; }
 nav a:hover, .site-footer a:hover, .auth-switch a:hover { color: var(--clay); }
 .nav-action { padding: 9px 13px; border: 1px solid var(--forest); }
@@ -47,7 +47,6 @@ body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSyst
 .shell { width: min(1160px, calc(100% - 64px)); }
 .site-header { min-height: 88px; border-color: #d5dbd5; }
 .wordmark { gap: 12px; font-size: 19px; letter-spacing: -.04em; }
-.wordmark-mark { width: 14px; height: 14px; box-shadow: 4px 4px 0 var(--clay); }
 nav { gap: 30px; }
 nav a { transition: color .15s ease; }
 .nav-action { padding: 10px 16px; }
@@ -499,8 +498,7 @@ input:focus, select:focus, textarea:focus { outline: 0; border-color: #477365; b
 .home-shell { position: relative; z-index: 1; }
 .home-v2 .site-header { min-height: 82px; border-color: #d9e2da; }
 .home-v2 .wordmark { font-size: 20px; }
-.home-v2 .wordmark-mark { position: relative; width: 18px; height: 18px; background: #214b3d; box-shadow: 5px 5px 0 #e5a273; }
-.home-v2 .wordmark-mark::after { position: absolute; top: 5px; left: 5px; width: 8px; height: 8px; background: #f4f6f0; border-radius: 50%; content: ''; }
+.home-v2 .wordmark .queuewise-mark { width: 31px; height: 31px; }
 .home-v2 .site-header nav { gap: clamp(15px, 2vw, 26px); }
 .home-v2 .site-header nav a { font-size: 13px; }
 .home-v2 .site-header .nav-action { padding: 10px 17px; color: #fff; background: #214b3d; border-color: #214b3d; }
@@ -530,7 +528,7 @@ input:focus, select:focus, textarea:focus { outline: 0; border-color: #477365; b
 .preview-topline, .preview-brand, .preview-live, .preview-business, .preview-now, .preview-now-name, .preview-you, .preview-foot { display: flex; align-items: center; }
 .preview-topline { justify-content: space-between; padding-bottom: 15px; border-bottom: 1px solid #e7ece6; }
 .preview-brand { gap: 7px; color: #263d33; font-size: 11px; font-weight: 800; }
-.preview-brand-mark { display: grid; width: 21px; height: 21px; place-items: center; color: #fffefa; background: #234b3d; border-radius: 6px; font-size: 13px; font-weight: 700; }
+.preview-brand .queuewise-mark { width: 21px; height: 21px; }
 .preview-live { gap: 5px; color: #5e7767; font-size: 8px; font-weight: 800; letter-spacing: .07em; }
 .preview-live i { width: 6px; height: 6px; background: #64a279; border-radius: 50%; }
 .preview-business { justify-content: space-between; padding: 17px 0 15px; }
@@ -607,10 +605,7 @@ input:focus, select:focus, textarea:focus { outline: 0; border-color: #477365; b
 .site-footer-v2 .footer-bottom { display: flex; }
 .footer-main { display: grid; grid-template-columns: 1.5fr repeat(3, minmax(120px, .7fr)); gap: 36px; padding: 36px 38px 34px; }
 .footer-brand { display: inline-flex; align-items: center; gap: 10px; color: #fffdf5; font-size: 18px; font-weight: 800; letter-spacing: -.04em; }
-.footer-mark { position: relative; display: grid; width: 29px; height: 29px; place-items: center; border: 1px solid rgba(246, 242, 230, .45); border-radius: 8px; }
-.footer-mark i { position: absolute; width: 12px; height: 2px; background: #e7ae84; transform: rotate(45deg); }
-.footer-mark i:nth-child(2) { transform: rotate(-45deg); }
-.footer-mark i:nth-child(3) { width: 2px; height: 12px; background: #b7d0b6; }
+.footer-brand .queuewise-mark { width: 34px; height: 34px; }
 .footer-brand-block > p { margin: 14px 0 0; color: #bdcec1; font-size: 11px; line-height: 1.75; }
 .footer-column { display: grid; align-content: start; justify-items: start; gap: 10px; font-size: 11px; }
 .footer-column p { margin: 2px 0 3px; color: #d8a17d; font-size: 8px; font-weight: 850; letter-spacing: .14em; }

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { SiteFooter } from '@/components/site-footer'
 import { SiteHeader } from '@/components/site-header'
+import { QueueWiseMark } from '@/components/queuewise-mark'
 
 const useCases = [
   { icon: '✳', title: 'Clinics', note: 'Appointments and walk-ins' },
@@ -38,7 +39,7 @@ export default function Home() {
             <div className="hero-orbit hero-orbit-two" />
             <div className="mini-note mini-note-top"><span className="mini-note-icon">↗</span><span><strong>Keep your place</strong><small>Updates as the queue moves</small></span></div>
             <article className="queue-preview">
-              <div className="preview-topline"><span className="preview-brand"><span className="preview-brand-mark">q</span> QueueWise</span><span className="preview-live"><i /> SAMPLE QUEUE</span></div>
+              <div className="preview-topline"><span className="preview-brand"><QueueWiseMark className="queuewise-mark" /> QueueWise</span><span className="preview-live"><i /> SAMPLE QUEUE</span></div>
               <div className="preview-business"><div><span className="preview-label">TODAY AT</span><h2>Corner & Co.</h2></div><span className="preview-category">Local service</span></div>
               <div className="preview-now"><div><span className="preview-label">NOW SERVING</span><strong>12</strong></div><div className="preview-now-name"><span className="preview-avatar">J</span><span>Jordan<small>In service</small></span></div></div>
               <div className="preview-you"><div className="preview-token"><span className="preview-label">YOUR TOKEN</span><strong>15</strong></div><div className="preview-wait"><span className="preview-label">PEOPLE AHEAD</span><strong>2 <small>people</small></strong></div><div className="preview-estimate">~20 min</div></div>

@@ -1,10 +1,11 @@
 import Link from 'next/link'
+import { QueueWiseMark } from '@/components/queuewise-mark'
 
 export function SiteHeader() {
   return (
     <header className="site-header">
       <Link className="wordmark" href="/" aria-label="QueueWise home">
-        <span className="wordmark-mark" aria-hidden="true" />
+        <QueueWiseMark className="queuewise-mark" />
         QueueWise
       </Link>
       <nav aria-label="Primary navigation">

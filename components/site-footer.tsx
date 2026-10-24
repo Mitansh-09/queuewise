@@ -1,11 +1,12 @@
 import Link from 'next/link'
+import { QueueWiseMark } from '@/components/queuewise-mark'
 
 export function SiteFooter() {
   return (
     <footer className="site-footer site-footer-v2">
       <div className="footer-main">
         <div className="footer-brand-block">
-          <Link className="footer-brand" href="/" aria-label="QueueWise home"><span className="footer-mark" aria-hidden="true"><i /><i /><i /></span><span>QueueWise</span></Link>
+          <Link className="footer-brand" href="/" aria-label="QueueWise home"><QueueWiseMark className="queuewise-mark" /><span>QueueWise</span></Link>
           <p>Make room for the rest of your day.<br />A clearer queue for local services.</p>
         </div>
         <nav className="footer-column" aria-label="Explore QueueWise">
