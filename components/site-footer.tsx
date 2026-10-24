@@ -24,7 +24,7 @@ export function SiteFooter() {
           <Link href="/terms">Terms</Link>
         </nav>
       </div>
-      <div className="footer-bottom"><span>© 2026 QueueWise <i>·</i> Student project</span><span>For clinics, college offices, salons, repair shops, and more.</span></div>
+      <div className="footer-bottom"><span>© 2026 QueueWise</span><span>For clinics, college offices, salons, repair shops, and more.</span></div>
     </footer>
   )
 }
