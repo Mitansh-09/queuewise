@@ -27,14 +27,14 @@ export function ClinicAdmin({ clinicId }: { clinicId: string }) {
       if (dates.error) setError(dates.error.message)
       else setClosures((dates.data || []) as Closure[])
     }
-    load().catch((caught) => setError(caught instanceof Error ? caught.message : 'Clinic settings could not be loaded.'))
+    load().catch((caught) => setError(caught instanceof Error ? caught.message : 'Business settings could not be loaded.'))
     return () => { cancelled = true }
   }, [clinicId])
 
   async function saveSettings(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setBusy(true); setError(''); setMessage('')
     const { error: saveError } = await createClient().rpc('set_clinic_settings', { p_clinic_id: clinicId, p_cutoff: Number(cutoff), p_online: online })
-    if (saveError) setError(saveError.message); else setMessage('Clinic booking settings saved.')
+    if (saveError) setError(saveError.message); else setMessage('Queue settings saved.')
     setBusy(false)
   }
 
@@ -43,7 +43,7 @@ export function ClinicAdmin({ clinicId }: { clinicId: string }) {
     const form = event.currentTarget
     const values = new FormData(form)
     const { error: addError } = await createClient().rpc('set_clinic_staff', { p_clinic_id: clinicId, p_user_id: String(values.get('userId') || '').trim(), p_role: String(values.get('role') || 'receptionist') })
-    if (addError) setError(addError.message); else { setMessage('Clinic role saved.'); form.reset() }
+    if (addError) setError(addError.message); else { setMessage('Team role saved.'); form.reset() }
     setBusy(false)
   }
 
@@ -67,26 +67,26 @@ export function ClinicAdmin({ clinicId }: { clinicId: string }) {
   }
 
   return <section className="surface clinic-admin-panel">
-    <p className="eyebrow">Clinic administration</p><h2>Clinic settings</h2>
+    <p className="eyebrow">Business administration</p><h2>Workspace settings</h2>
     {error && <p className="form-message error" role="alert">{error}</p>}{message && <p className="form-message" role="status">{message}</p>}
     <form className="schedule-fields" onSubmit={saveSettings}>
       <label>Cancellation cutoff before session, in minutes<input type="number" min="0" max="1440" value={cutoff} onChange={(event) => setCutoff(event.target.value)} /></label>
       <label className="check-label"><input type="checkbox" checked={online} onChange={(event) => setOnline(event.target.checked)} /> Allow online bookings</label>
       <button className="button button-primary" disabled={busy}>Save settings</button>
     </form>
-    <h3>Clinic staff accounts</h3><p className="helper-text">Enter the account UUID from the clinic’s registered staff member. Role changes are restricted to clinic admins.</p>
+    <h3>Team accounts</h3><p className="helper-text">Enter the account UUID for a registered team member. Role changes are restricted to business admins.</p>
     <form className="schedule-fields" onSubmit={addStaff}>
       <label>Account UUID<input name="userId" required /></label>
-      <label>Clinic role<select name="role"><option value="receptionist">Receptionist</option><option value="doctor">Doctor</option><option value="admin">Clinic admin</option></select></label>
+      <label>Team role<select name="role"><option value="receptionist">Front desk</option><option value="doctor">Service provider</option><option value="admin">Business admin</option></select></label>
       <button className="button button-secondary" disabled={busy}>Save staff role</button>
     </form>
-    <h3>Leave and closure days</h3>
+    <h3>Closed days</h3>
     <form className="schedule-fields" onSubmit={addClosure}>
       <label>Date<input type="date" name="date" required min={new Date().toLocaleDateString('en-CA')} /></label>
-      <label>Doctor name, or leave blank for whole clinic<input name="doctorName" /></label>
+      <label>Service or team member, or leave blank for the whole business<input name="doctorName" /></label>
       <label>Reason (optional)<input name="reason" maxLength={200} /></label>
       <button className="button button-secondary" disabled={busy}>Add closure</button>
     </form>
-    <div className="health-list">{closures.map((closure) => <article className="health-list-item" key={closure.id}><div><strong>{closure.closed_on}</strong><p>{closure.doctor_name || 'Whole clinic'}{closure.reason ? ` · ${closure.reason}` : ''}</p></div><button type="button" className="text-action" onClick={() => removeClosure(closure.id)}>Remove</button></article>)}{closures.length === 0 && <p className="empty-state">No future closure days recorded.</p>}</div>
+    <div className="health-list">{closures.map((closure) => <article className="health-list-item" key={closure.id}><div><strong>{closure.closed_on}</strong><p>{closure.doctor_name || 'Whole business'}{closure.reason ? ` · ${closure.reason}` : ''}</p></div><button type="button" className="text-action" onClick={() => removeClosure(closure.id)}>Remove</button></article>)}{closures.length === 0 && <p className="empty-state">No future closed days recorded.</p>}</div>
   </section>
 }

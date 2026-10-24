@@ -1,4 +1,5 @@
-export type Clinic = { id: string; name: string; address: string; active: boolean }
+export type BusinessType = 'clinic' | 'college_office' | 'salon' | 'repair_shop' | 'other'
+export type Clinic = { id: string; name: string; address: string; active: boolean; business_type?: BusinessType }
 
 export type Schedule = {
   id: string

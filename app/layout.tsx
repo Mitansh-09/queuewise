@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'QueueWise | Clinic queue management',
-  description: 'Book a same-day clinic token, follow the queue estimate, and manage appointments and walk-ins.',
+  title: 'QueueWise | Simple queues for local businesses',
+  description: 'Join a same-day queue, follow your place, and help local service teams manage walk-ins and bookings.',
   icons: { icon: '/favicon.svg' },
 }
 

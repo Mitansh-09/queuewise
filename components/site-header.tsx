@@ -8,17 +8,17 @@ export function SiteHeader() {
         QueueWise
       </Link>
       <nav aria-label="Primary navigation">
-        <Link href="/patient">Book a token</Link>
-        <Link href="/doctors">Clinics</Link>
-        <Link href="/staff">For clinics</Link>
+        <Link href="/patient">Join a queue</Link>
+        <Link href="/doctors">Businesses</Link>
+        <Link href="/staff">For businesses</Link>
         <Link className="nav-action" href="/login">Sign in</Link>
       </nav>
       <details className="site-menu">
         <summary aria-label="Open navigation menu"><span>Menu</span><i aria-hidden="true" /></summary>
         <nav className="site-menu-links" aria-label="Mobile navigation">
-          <Link href="/patient">Book or track a token</Link>
-          <Link href="/doctors">Find a clinic</Link>
-          <Link href="/staff">Clinic staff</Link>
+          <Link href="/patient">Join or track a queue</Link>
+          <Link href="/doctors">Browse businesses</Link>
+          <Link href="/staff">Business workspace</Link>
           <Link href="/login">Sign in</Link>
         </nav>
       </details>

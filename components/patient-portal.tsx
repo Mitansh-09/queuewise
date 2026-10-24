@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { Appointment, Clinic, QueueStatus, Schedule } from '@/lib/types'
 
 const today = () => new Date().toLocaleDateString('en-CA')
+const businessTypeName: Record<string, string> = { clinic: 'Clinic', college_office: 'College office', salon: 'Salon', repair_shop: 'Repair shop', other: 'Local service' }
 
 function labelFor(status: Appointment['status']) {
   return status.replace('_', ' ')
@@ -53,7 +54,7 @@ export function PatientPortal() {
   useEffect(() => {
     let channel: ReturnType<ReturnType<typeof createClient>['channel']> | undefined
     const loadTimeout = window.setTimeout(() => {
-      setError('The clinic queue is taking longer than expected to load. Check your connection, then try again.')
+      setError('The queue is taking longer than expected to load. Check your connection, then try again.')
       setLoading(false)
     }, 12000)
     async function load() {
@@ -117,7 +118,7 @@ export function PatientPortal() {
 
   async function book(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!clinicId || !scheduleId) return setError('Choose a clinic and today\'s doctor first.')
+    if (!clinicId || !scheduleId) return setError('Choose a business and service first.')
     setBooking(true); setError(''); setMessage('')
     const form = new FormData(event.currentTarget)
     try {
@@ -149,7 +150,7 @@ export function PatientPortal() {
 
   async function rescheduleToken(id: string) {
     const nextId = rescheduleIds[id]
-    if (!nextId) return setError('Choose another clinic session first.')
+    if (!nextId) return setError('Choose another service session first.')
     setError(''); setMessage('')
     const { error: changeError } = await createClient().rpc('reschedule_queue_token', { p_appointment_id: id, p_new_schedule_id: nextId })
     if (changeError) return setError(changeError.message)
@@ -164,31 +165,31 @@ export function PatientPortal() {
   if (loading) return <p className="page-state">Loading your queue…</p>
   return (
     <div className="portal-layout">
-      <aside className="portal-side"><Link className="wordmark" href="/"><span className="wordmark-mark" />QueueWise</Link><p>Patient portal</p><button className="link-button" onClick={signOut}>Sign out</button></aside>
+      <aside className="portal-side"><Link className="wordmark" href="/"><span className="wordmark-mark" />QueueWise</Link><p>My queue</p><button className="link-button" onClick={signOut}>Sign out</button></aside>
       <main className="portal-main">
-        <header className="portal-title"><div><p className="eyebrow">Patient portal</p><h1>Your clinic queue</h1></div><Link className="button button-secondary" href="/staff">Clinic staff</Link></header>
+        <header className="portal-title"><div><p className="eyebrow">Customer portal</p><h1>Your queue</h1></div><Link className="button button-secondary" href="/staff">Business workspace</Link></header>
         {error && <div className="form-message error" role="alert"><p>{error}</p><button className="text-action" type="button" onClick={() => window.location.reload()}>Try again</button></div>}
         {message && <p className="form-message" role="status">{message}</p>}
         <section className="portal-grid">
-          <div className="surface booking-surface"><h2>Book today&apos;s token</h2><p>One active token is allowed for each clinic session.</p>
-            {clinics.length === 0 ? <div className="empty-state"><p>No clinics have been set up yet, so there are no doctors or sessions to book.</p><p>Clinic administrator? <Link href="/staff">Set up a clinic</Link>. Patients can return here once a clinic publishes its schedule.</p></div> :
+          <div className="surface booking-surface"><h2>Join today&apos;s queue</h2><p>One active token is allowed for each service session.</p>
+            {clinics.length === 0 ? <div className="empty-state"><p>No businesses have been added yet, so there are no service queues to join.</p><p>Business owner? <Link href="/staff">Set up your workspace</Link>. Customers can return once a business publishes its hours.</p></div> :
             <form onSubmit={book} className="stack-form">
-              <label>Clinic<select value={clinicId} onChange={(event) => { setClinicId(event.target.value); setScheduleId(''); setPreferredDoctor('') }} required><option value="">Choose a clinic</option>{clinics.map((clinic) => <option value={clinic.id} key={clinic.id}>{clinic.name}</option>)}</select></label>
-              <label>Doctor and time<select value={scheduleId} onChange={(event) => setScheduleId(event.target.value)} required disabled={!clinicId}><option value="">Choose today&apos;s session</option>{schedules.filter((schedule) => schedule.service_date === today()).map((schedule) => <option key={schedule.id} value={schedule.id} disabled={!schedule.accepting_tokens}>{schedule.doctor_name} · {schedule.opens_at.slice(0, 5)} to {schedule.closes_at.slice(0, 5)} {!schedule.accepting_tokens ? '(closed)' : ''}</option>)}</select></label>
-              {selectedSchedule && <p className="helper-text">Starting estimate: {selectedSchedule.average_minutes} minutes per visit. Fee: ₹{Number(selectedSchedule.fee || 0).toFixed(0)}. {selectedSchedule.capacity - selectedSchedule.last_token} tokens remain.</p>}
+              <label>Business<select value={clinicId} onChange={(event) => { setClinicId(event.target.value); setScheduleId(''); setPreferredDoctor('') }} required><option value="">Choose a business</option>{clinics.map((clinic) => <option value={clinic.id} key={clinic.id}>{clinic.name} · {businessTypeName[clinic.business_type || 'other']}</option>)}</select></label>
+              <label>Service and time<select value={scheduleId} onChange={(event) => setScheduleId(event.target.value)} required disabled={!clinicId}><option value="">Choose today&apos;s service session</option>{schedules.filter((schedule) => schedule.service_date === today()).map((schedule) => <option key={schedule.id} value={schedule.id} disabled={!schedule.accepting_tokens}>{schedule.doctor_name} · {schedule.opens_at.slice(0, 5)} to {schedule.closes_at.slice(0, 5)} {!schedule.accepting_tokens ? '(closed)' : ''}</option>)}</select></label>
+              {selectedSchedule && <p className="helper-text">Typical wait starts around {selectedSchedule.average_minutes} minutes per person. Price: ₹{Number(selectedSchedule.fee || 0).toFixed(0)}. {selectedSchedule.capacity - selectedSchedule.last_token} tokens remain.</p>}
               <label>Your name<input name="name" required minLength={2} maxLength={80} /></label>
               <label>Mobile number<input name="phone" required inputMode="tel" minLength={7} maxLength={20} /></label>
-              <label>What would you like the doctor to know? (optional)<textarea name="visitReason" maxLength={500} rows={3} placeholder="Share only what you want the clinic team to see" /></label>
+              <label>What are you here for? (optional)<textarea name="visitReason" maxLength={500} rows={3} placeholder="Add a short note for the service team" /></label>
               <button className="button button-primary" disabled={booking}>{booking ? 'Booking token' : 'Book token'}</button>
             </form>}
           </div>
-          <div className="surface"><h2>My tokens</h2>{appointments.length === 0 ? <p className="empty-state">You do not have a token yet. Book one for an available clinic session.</p> : <div className="appointment-list">{appointments.map((appointment) => {
+          <div className="surface"><h2>My tokens</h2>{appointments.length === 0 ? <p className="empty-state">You do not have a token yet. Join an available service queue.</p> : <div className="appointment-list">{appointments.map((appointment) => {
             const status = queueStatuses[appointment.id]
             const canChange = appointment.status === 'waiting' || appointment.status === 'arrived'
             const otherSessions = schedules.filter((item) => item.id !== appointment.schedule_id && item.accepting_tokens && item.last_token < item.capacity)
             const travel = travelMinutes[appointment.id] || 0
             const leaveNow = status && appointment.status === 'waiting' && travel > 0 && status.estimated_wait_minutes <= travel
-            return <article key={appointment.id} className="appointment-card"><div><p className="token-label">Token</p><strong className="token-number">{appointment.token_number}</strong></div><div><span className={`status status-${appointment.status}`}>{labelFor(appointment.status)}</span><h3>{status?.clinic_name || 'Clinic visit'}</h3>{status ? <><p>{status.doctor_name} · {status.people_ahead} {status.people_ahead === 1 ? 'person' : 'people'} ahead</p><p className="wait">Estimated wait: {status.estimated_wait_minutes} minutes</p><p className="helper-text">Estimate uses {status.average_consult_minutes} minute consultations and may change as visits finish.</p></> : <p>This token is closed.</p>}{appointment.status === 'waiting' && status && <label className="travel-time-field">Minutes needed to reach the clinic<input type="number" min="0" max="240" value={travel} onChange={(event) => setTravelMinutes((items) => ({ ...items, [appointment.id]: Number(event.target.value) }))} /></label>}{leaveNow && <p className="leave-alert" role="status"><strong>Consider leaving now.</strong> The queue estimate is within your travel time. Keep checking for updates and contact the clinic if needed. This alert appears only while this page is open.</p>}{canChange && <div className="patient-token-actions"><button type="button" className="text-action" onClick={() => cancelToken(appointment.id)}>Cancel token</button><label>Move to<select value={rescheduleIds[appointment.id] || ''} onChange={(event) => setRescheduleIds((items) => ({ ...items, [appointment.id]: event.target.value }))}><option value="">Choose another session</option>{otherSessions.map((item) => <option key={item.id} value={item.id}>{item.service_date} · {item.doctor_name} · {item.opens_at.slice(0, 5)}</option>)}</select></label><button type="button" className="text-action" onClick={() => rescheduleToken(appointment.id)}>Reschedule</button></div>}</div></article>
+            return <article key={appointment.id} className="appointment-card"><div><p className="token-label">Token</p><strong className="token-number">{appointment.token_number}</strong></div><div><span className={`status status-${appointment.status}`}>{labelFor(appointment.status)}</span><h3>{status?.clinic_name || 'Business queue'}</h3>{status ? <><p>{status.doctor_name} · {status.people_ahead} {status.people_ahead === 1 ? 'person' : 'people'} ahead</p><p className="wait">Estimated wait: {status.estimated_wait_minutes} minutes</p><p className="helper-text">Estimate uses a typical {status.average_consult_minutes}-minute service time and may change as the queue moves.</p></> : <p>This token is closed.</p>}{appointment.status === 'waiting' && status && <label className="travel-time-field">Minutes needed to reach the business<input type="number" min="0" max="240" value={travel} onChange={(event) => setTravelMinutes((items) => ({ ...items, [appointment.id]: Number(event.target.value) }))} /></label>}{leaveNow && <p className="leave-alert" role="status"><strong>Consider heading over now.</strong> The queue estimate is within your travel time. Keep checking for updates and contact the business if needed. This alert appears only while this page is open.</p>}{canChange && <div className="patient-token-actions"><button type="button" className="text-action" onClick={() => cancelToken(appointment.id)}>Cancel token</button><label>Move to<select value={rescheduleIds[appointment.id] || ''} onChange={(event) => setRescheduleIds((items) => ({ ...items, [appointment.id]: event.target.value }))}><option value="">Choose another session</option>{otherSessions.map((item) => <option key={item.id} value={item.id}>{item.service_date} · {item.doctor_name} · {item.opens_at.slice(0, 5)}</option>)}</select></label><button type="button" className="text-action" onClick={() => rescheduleToken(appointment.id)}>Reschedule</button></div>}</div></article>
           })}</div>}</div>
         </section>
       </main>

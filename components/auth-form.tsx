@@ -34,7 +34,7 @@ export function AuthForm({ mode, confirmed = false }: { mode: Mode; confirmed?: 
       }
 
       const displayName = String(form.get('displayName') || '').trim()
-      if (displayName.length < 2) throw new Error('Enter the name you would like the clinic to use.')
+      if (displayName.length < 2) throw new Error('Enter your name.')
       const confirmationUrl = new URL('/login', window.location.origin)
       confirmationUrl.searchParams.set('confirmed', '1')
       if (destination !== '/patient') confirmationUrl.searchParams.set('next', destination)

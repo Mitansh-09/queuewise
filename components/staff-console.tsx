@@ -23,7 +23,6 @@ export function StaffConsole() {
   const [clinicId, setClinicId] = useState('')
   const [scheduleId, setScheduleId] = useState('')
   const [userId, setUserId] = useState('')
-  const [platformAdmin, setPlatformAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [working, setWorking] = useState(false)
   const [error, setError] = useState('')
@@ -74,14 +73,8 @@ export function StaffConsole() {
         const { data: identity } = await supabase.auth.getUser()
         if (!identity.user) { router.push('/login?next=/staff'); return }
         setUserId(identity.user.id)
-        const [profile, memberships] = await Promise.all([
-          supabase.from('profiles').select('role').eq('id', identity.user.id).single(),
-          supabase.from('staff_members').select('clinic_id,role'),
-        ])
-        if (profile.error) throw profile.error
+        const memberships = await supabase.from('staff_members').select('clinic_id,role')
         if (memberships.error) throw memberships.error
-        const isPlatformAdmin = profile.data.role === 'admin'
-        setPlatformAdmin(isPlatformAdmin)
         const nextMembers = (memberships.data || []) as Member[]
         setMembers(nextMembers)
         const ids = nextMembers.map((item) => item.clinic_id)
@@ -160,14 +153,14 @@ export function StaffConsole() {
     if (!clinicId || !scheduleId) return
     await runAction(async () => {
       const result = await createClient().rpc('advance_queue', { p_clinic_id: clinicId, p_schedule_id: scheduleId })
-      if (!result.error) setMessage(result.data ? `Token ${(result.data as Appointment).token_number} is now in consultation.` : 'No active patients remain in this session.')
+      if (!result.error) setMessage(result.data ? `Token ${(result.data as Appointment).token_number} is now being served.` : 'No active tokens remain in this session.')
       return result
     })
   }
 
   async function createSchedule(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!clinicId) return setError('Choose a clinic before creating a session.')
+    if (!clinicId) return setError('Choose a business before creating a session.')
     const form = event.currentTarget
     const values = new FormData(form)
     setWorking(true); setError(''); setMessage('')
@@ -179,14 +172,14 @@ export function StaffConsole() {
         p_capacity: Number(values.get('capacity')), p_fee: Number(values.get('fee') || 0),
       })
       if (saveError) throw saveError
-      form.reset(); await loadSchedules(clinicId); setMessage('Doctor session saved.')
+      form.reset(); await loadSchedules(clinicId); setMessage('Service session saved.')
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'The session could not be saved.') }
     finally { setWorking(false) }
   }
 
   async function addWalkIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!clinicId || !scheduleId) return setError('Choose today’s clinic session first.')
+    if (!clinicId || !scheduleId) return setError('Choose today’s business session first.')
     const form = event.currentTarget
     const values = new FormData(form)
     setWorking(true); setError(''); setMessage('')
@@ -227,34 +220,33 @@ export function StaffConsole() {
     const form = event.currentTarget
     const values = new FormData(form)
     setWorking(true); setError('')
-    const { data, error: createError } = await createClient().rpc('create_clinic', { p_name: String(values.get('name') || '').trim(), p_address: String(values.get('address') || '').trim() })
+    const { data, error: createError } = await createClient().rpc('create_business', { p_name: String(values.get('name') || '').trim(), p_address: String(values.get('address') || '').trim(), p_business_type: String(values.get('businessType') || 'other') })
     if (createError) setError(createError.message)
-    else { setClinics((items) => [...items, data as Clinic]); setMembers((items) => [...items, { clinic_id: (data as Clinic).id, role: 'admin' }]); setClinicId((data as Clinic).id); setMessage('Clinic created. You are its first clinic administrator.'); form.reset() }
+    else { setClinics((items) => [...items, data as Clinic]); setMembers((items) => [...items, { clinic_id: (data as Clinic).id, role: 'admin' }]); setClinicId((data as Clinic).id); setMessage('Business created. You are its first administrator.'); form.reset() }
     setWorking(false)
   }
 
   async function signOut() { await createClient().auth.signOut(); router.push('/') }
-  if (loading) return <p className="page-state">Loading clinic workspace…</p>
+  if (loading) return <p className="page-state">Loading business workspace…</p>
 
   return <div className="portal-layout staff-layout">
-    <aside className="portal-side"><Link className="wordmark" href="/"><span className="wordmark-mark" />QueueWise</Link><p>{currentRole ? `Clinic ${currentRole}` : 'Clinic workspace'}</p><Link className="link-button" href="/patient">Patient portal</Link><button className="link-button" onClick={signOut}>Sign out</button></aside>
+    <aside className="portal-side"><Link className="wordmark" href="/"><span className="wordmark-mark" />QueueWise</Link><p>{currentRole ? `Business ${currentRole === 'doctor' ? 'service provider' : currentRole}` : 'Business workspace'}</p><Link className="link-button" href="/patient">Customer queue</Link><button className="link-button" onClick={signOut}>Sign out</button></aside>
     <main className="portal-main">
-      <header className="portal-title"><div><p className="eyebrow">Clinic operations</p><h1>{currentRole === 'doctor' ? 'Doctor view' : currentRole === 'admin' ? 'Clinic admin' : 'Today’s queue'}</h1></div></header>
+      <header className="portal-title"><div><p className="eyebrow">Business operations</p><h1>{currentRole === 'doctor' ? 'Service view' : currentRole === 'admin' ? 'Business admin' : 'Today’s queue'}</h1></div></header>
       {error && <p className="form-message error" role="alert">{error}</p>}{message && <p className="form-message" role="status">{message}</p>}
-      {!clinics.length && !platformAdmin ? <section className="surface setup-note"><h2>This account is not assigned to a clinic</h2><p>Ask the clinic administrator to add your account as a receptionist, doctor, or clinic admin.</p></section> : null}
-      {platformAdmin && <section className="surface clinic-create"><p className="eyebrow">Platform setup</p><h2>Create a clinic</h2><form className="schedule-fields" onSubmit={createClinic}><label>Clinic name<input name="name" minLength={2} maxLength={120} required /></label><label>Clinic address<input name="address" minLength={5} maxLength={240} required /></label><button className="button button-primary" disabled={working}>Create clinic</button></form></section>}
+      {!clinics.length && <section className="surface clinic-create"><p className="eyebrow">Business setup</p><h2>Set up your business</h2><p>QueueWise works for clinics, college offices, salons, repair shops, and other local services.</p><form className="schedule-fields" onSubmit={createClinic}><label>Business name<input name="name" minLength={2} maxLength={120} required /></label><label>Business type<select name="businessType" defaultValue="other"><option value="clinic">Clinic</option><option value="college_office">College office</option><option value="salon">Salon</option><option value="repair_shop">Repair shop</option><option value="other">Other service business</option></select></label><label>Address<input name="address" minLength={5} maxLength={240} required /></label><button className="button button-primary" disabled={working}>Create business</button></form></section>}
       {clinics.length > 0 && <>
-        <section className="surface control-bar"><label>Clinic<select value={clinicId} onChange={(event) => { setClinicId(event.target.value); setScheduleId(''); setAppointments([]); setReport(null) }}><option value="">Choose a clinic</option>{clinics.map((clinic) => <option value={clinic.id} key={clinic.id}>{clinic.name}</option>)}</select></label>
-          <label>Today’s doctor session<select value={scheduleId} onChange={(event) => { setScheduleId(event.target.value); setAppointments([]) }} disabled={!clinicId}><option value="">Choose a session</option>{schedules.filter((item) => item.service_date === today()).map((schedule) => <option key={schedule.id} value={schedule.id}>{schedule.doctor_name} · {schedule.opens_at.slice(0, 5)}</option>)}</select></label></section>
-        {selectedSchedule && <section className="queue-board"><div className="queue-summary"><p>Today’s session</p><h2>{selectedSchedule.doctor_name}</h2><span>{selectedSchedule.opens_at.slice(0, 5)} to {selectedSchedule.closes_at.slice(0, 5)} · {selectedSchedule.last_token}/{selectedSchedule.capacity} tokens · Fee ₹{Number(selectedSchedule.fee || 0).toFixed(0)}</span>
+        <section className="surface control-bar"><label>Business<select value={clinicId} onChange={(event) => { setClinicId(event.target.value); setScheduleId(''); setAppointments([]); setReport(null) }}><option value="">Choose a business</option>{clinics.map((clinic) => <option value={clinic.id} key={clinic.id}>{clinic.name}</option>)}</select></label>
+          <label>Today’s service session<select value={scheduleId} onChange={(event) => { setScheduleId(event.target.value); setAppointments([]) }} disabled={!clinicId}><option value="">Choose a session</option>{schedules.filter((item) => item.service_date === today()).map((schedule) => <option key={schedule.id} value={schedule.id}>{schedule.doctor_name} · {schedule.opens_at.slice(0, 5)}</option>)}</select></label></section>
+        {selectedSchedule && <section className="queue-board"><div className="queue-summary"><p>Today’s service</p><h2>{selectedSchedule.doctor_name}</h2><span>{selectedSchedule.opens_at.slice(0, 5)} to {selectedSchedule.closes_at.slice(0, 5)} · {selectedSchedule.last_token}/{selectedSchedule.capacity} tokens · Price ₹{Number(selectedSchedule.fee || 0).toFixed(0)}</span>
           {currentRole !== 'doctor' && <button className="button button-secondary" onClick={() => runAction(async () => { const result = await createClient().rpc('set_token_acceptance', { p_schedule_id: selectedSchedule.id, p_accepting: !selectedSchedule.accepting_tokens }); if (!result.error) { await loadSchedules(clinicId); setMessage(selectedSchedule.accepting_tokens ? 'Online token booking closed.' : 'Online token booking opened.') }; return result })} disabled={working}>{selectedSchedule.accepting_tokens ? 'Close tokens' : 'Open tokens'}</button>}</div>
-          <div className="now-serving"><p>Now in consultation</p><strong>{serving?.token_number ?? 'None'}</strong><span>{serving?.patient_name || 'No patient in consultation'}</span>{(currentRole === 'doctor' || currentRole === 'receptionist' || currentRole === 'admin') && <button className="button button-primary" onClick={advance} disabled={working}>{serving ? 'Finish and call next' : 'Call next patient'}</button>}</div></section>}
-        {selectedSchedule && currentRole !== 'doctor' && <section className="surface walk-in-panel"><p className="eyebrow">Front desk</p><h2>Add a walk-in</h2><p>Walk-ins receive the next token in this doctor’s shared queue.</p><form className="schedule-fields walk-in-form" onSubmit={addWalkIn}><label>Patient name<input name="name" minLength={2} maxLength={80} required /></label><label>Mobile number<input name="phone" inputMode="tel" minLength={7} maxLength={20} required /></label><label>Reason to share with doctor, optional<input name="reason" maxLength={500} /></label><button className="button button-primary" disabled={working}>Add to queue</button></form></section>}
-        {selectedSchedule && <section className="surface queue-table"><div className="section-heading"><h2>Today’s patients</h2><span>{waiting.length} waiting · {appointments.length} booked</span></div>{appointments.length === 0 ? <p className="empty-state">No patients booked for this session.</p> : <div className="staff-list">{appointments.map((appointment) => <article className={`staff-token staff-token-${appointment.status}`} key={appointment.id}><strong>{appointment.token_number}</strong><div><h3>{appointment.patient_name}</h3><p>{appointment.source === 'walk_in' ? 'Walk-in' : 'Online'} · {appointment.phone}</p>{currentRole === 'doctor' && sharedNotes[appointment.id] && <p className="doctor-visit-note"><strong>Patient-shared reason:</strong> {sharedNotes[appointment.id]}</p>}</div><span className={`status status-${appointment.status}`}>{appointment.status.replace('_', ' ')}</span><div className="staff-row-actions">{currentRole !== 'doctor' && appointment.status === 'waiting' && <button className="text-action" disabled={working} onClick={() => runAction(() => createClient().rpc('mark_queue_arrived', { p_appointment_id: appointment.id }))}>Mark arrived</button>}{currentRole !== 'doctor' && ['waiting','arrived'].includes(appointment.status) && <><button className="text-action" disabled={working} onClick={() => runAction(() => createClient().rpc('set_queue_status', { p_appointment_id: appointment.id, p_next_status: 'skipped' }))}>Skip</button><button className="text-action" disabled={working} onClick={() => runAction(() => createClient().rpc('set_queue_status', { p_appointment_id: appointment.id, p_next_status: 'no_show' }))}>No-show</button></>}{currentRole !== 'doctor' && appointment.status === 'skipped' && <button className="text-action" disabled={working} onClick={() => runAction(() => createClient().rpc('set_queue_status', { p_appointment_id: appointment.id, p_next_status: 'waiting' }))}>Return to queue</button>}</div></article>)}</div>}</section>}
-        {canManageClinic && <section className="surface schedule-form"><div><p className="eyebrow">Schedule management</p><h2>Create a doctor session</h2><p>Set the doctor, date, opening hours, starting estimate, fee, and token limit.</p></div><form onSubmit={createSchedule} className="schedule-fields"><label>Doctor name<input name="doctorName" required minLength={2} /></label><label>Date<input name="serviceDate" type="date" required min={today()} defaultValue={today()} /></label><label>Opens<input name="opensAt" type="time" required defaultValue="09:00" /></label><label>Closes<input name="closesAt" type="time" required defaultValue="13:00" /></label><label>Starting average consult minutes<input name="averageMinutes" type="number" required min="2" max="90" defaultValue="10" /></label><label>Token capacity<input name="capacity" type="number" required min="1" max="200" defaultValue="30" /></label><label>Consultation fee, ₹<input name="fee" type="number" min="0" step="0.01" defaultValue="0" /></label><button className="button button-primary" disabled={working}>Save session</button></form></section>}
+          <div className="now-serving"><p>Now serving</p><strong>{serving?.token_number ?? 'None'}</strong><span>{serving?.patient_name || 'No one is being served right now'}</span>{(currentRole === 'doctor' || currentRole === 'receptionist' || currentRole === 'admin') && <button className="button button-primary" onClick={advance} disabled={working}>{serving ? 'Finish and call next' : 'Call next token'}</button>}</div></section>}
+        {selectedSchedule && currentRole !== 'doctor' && <section className="surface walk-in-panel"><p className="eyebrow">At the counter</p><h2>Add a walk-in</h2><p>Walk-ins receive the next token in this service queue.</p><form className="schedule-fields walk-in-form" onSubmit={addWalkIn}><label>Customer name<input name="name" minLength={2} maxLength={80} required /></label><label>Mobile number<input name="phone" inputMode="tel" minLength={7} maxLength={20} required /></label><label>Note for the service team, optional<input name="reason" maxLength={500} /></label><button className="button button-primary" disabled={working}>Add to queue</button></form></section>}
+        {selectedSchedule && <section className="surface queue-table"><div className="section-heading"><h2>Today’s queue</h2><span>{waiting.length} waiting · {appointments.length} tokens</span></div>{appointments.length === 0 ? <p className="empty-state">No one has joined this queue yet.</p> : <div className="staff-list">{appointments.map((appointment) => <article className={`staff-token staff-token-${appointment.status}`} key={appointment.id}><strong>{appointment.token_number}</strong><div><h3>{appointment.patient_name}</h3><p>{appointment.source === 'walk_in' ? 'Walk-in' : 'Online'} · {appointment.phone}</p>{currentRole === 'doctor' && sharedNotes[appointment.id] && <p className="doctor-visit-note"><strong>Customer note:</strong> {sharedNotes[appointment.id]}</p>}</div><span className={`status status-${appointment.status}`}>{appointment.status.replace('_', ' ')}</span><div className="staff-row-actions">{currentRole !== 'doctor' && appointment.status === 'waiting' && <button className="text-action" disabled={working} onClick={() => runAction(() => createClient().rpc('mark_queue_arrived', { p_appointment_id: appointment.id }))}>Mark arrived</button>}{currentRole !== 'doctor' && ['waiting','arrived'].includes(appointment.status) && <><button className="text-action" disabled={working} onClick={() => runAction(() => createClient().rpc('set_queue_status', { p_appointment_id: appointment.id, p_next_status: 'skipped' }))}>Skip</button><button className="text-action" disabled={working} onClick={() => runAction(() => createClient().rpc('set_queue_status', { p_appointment_id: appointment.id, p_next_status: 'no_show' }))}>Mark missed</button></>}{currentRole !== 'doctor' && appointment.status === 'skipped' && <button className="text-action" disabled={working} onClick={() => runAction(() => createClient().rpc('set_queue_status', { p_appointment_id: appointment.id, p_next_status: 'waiting' }))}>Return to queue</button>}</div></article>)}</div>}</section>}
+        {canManageClinic && <section className="surface schedule-form"><div><p className="eyebrow">Service management</p><h2>Create a service session</h2><p>Set the service or team member, date, hours, average service time, price, and token limit.</p></div><form onSubmit={createSchedule} className="schedule-fields"><label>Service or team member<input name="doctorName" required minLength={2} /></label><label>Date<input name="serviceDate" type="date" required min={today()} defaultValue={today()} /></label><label>Opens<input name="opensAt" type="time" required defaultValue="09:00" /></label><label>Closes<input name="closesAt" type="time" required defaultValue="13:00" /></label><label>Typical service minutes per person<input name="averageMinutes" type="number" required min="2" max="90" defaultValue="10" /></label><label>Token capacity<input name="capacity" type="number" required min="1" max="200" defaultValue="30" /></label><label>Price, ₹<input name="fee" type="number" min="0" step="0.01" defaultValue="0" /></label><button className="button button-primary" disabled={working}>Save session</button></form></section>}
         {clinicId && canManageClinic && <ClinicDoctorManager clinicId={clinicId} />}
         {clinicId && canManageClinic && <ClinicAdmin clinicId={clinicId} />}
-        {clinicId && canManageClinic && <section className="surface report-panel"><div className="section-heading"><div><p className="eyebrow">Daily operations</p><h2>Today’s report</h2></div><button className="button button-secondary" onClick={loadReport} disabled={working}>Refresh report</button></div>{report ? <div className="report-grid">{[['Patients booked',report.booked],['Arrived',report.arrived],['Completed',report.completed],['No-shows',report.noShows],['Average recorded wait',`${report.averageWait} min`],['Average consult',`${report.averageConsult} min`]].map(([label,value]) => <div className="report-stat" key={label}><span>{label}</span><strong>{value}</strong></div>)}</div> : <p className="empty-state">The report uses recorded arrival and consultation timestamps. Refresh to calculate today’s figures.</p>}<p className="helper-text">Wait averages include only patients with both arrival and consultation start times. No historical comparison is shown until real data exists.</p></section>}
+        {clinicId && canManageClinic && <section className="surface report-panel"><div className="section-heading"><div><p className="eyebrow">Daily operations</p><h2>Today’s report</h2></div><button className="button button-secondary" onClick={loadReport} disabled={working}>Refresh report</button></div>{report ? <div className="report-grid">{[['Tokens created',report.booked],['Arrived',report.arrived],['Completed',report.completed],['Missed',report.noShows],['Average wait',`${report.averageWait} min`],['Average service time',`${report.averageConsult} min`]].map(([label,value]) => <div className="report-stat" key={label}><span>{label}</span><strong>{value}</strong></div>)}</div> : <p className="empty-state">The report uses recorded arrival and service timestamps. Refresh to calculate today’s figures.</p>}<p className="helper-text">Wait averages include people with recorded arrival and service start times. No historical comparison is shown until real data exists.</p></section>}
       </>}
     </main>
   </div>

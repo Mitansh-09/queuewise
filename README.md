@@ -1,19 +1,20 @@
 # QueueWise
 
-QueueWise is a clinic queue application for same-day doctor sessions. Patients reserve a token and follow their place in line. Reception staff manage online bookings and walk-ins in the same queue, while doctors and clinic administrators see tools for their assigned work.
+QueueWise is a same-day appointment and walk-in queue manager for local service businesses. It can be used by clinics, college offices, salons, repair shops, and similar teams. Customers reserve a token and follow their place in line; staff manage bookings and walk-ins in one shared queue.
 
 ## The problem
 
-Patients often arrive without knowing how long they will wait. Clinic teams manage appointments and walk-ins at the same time, while the queue changes through the day. QueueWise gives patients and clinic staff a shared queue with clear actions and an estimated wait that updates as visits move forward.
+Small service teams often handle walk-ins and appointments at the same time, while customers have little idea how long they will wait. QueueWise gives each business a shared queue, lets customers follow their token, and gives staff clear actions for running the day.
 
 ## Main workflows
 
-1. A clinic administrator creates a clinic, adds staff, and publishes doctor sessions with hours, capacity, and average consultation time.
-2. A patient finds a participating clinic and books an available same-day token.
-3. The database allocates the token atomically and rejects closed, full, past, or duplicate bookings.
-4. The patient follows their token, people ahead, and estimated wait as the queue changes.
-5. Reception checks in arrivals, registers walk-ins, calls the next patient, records skips or no-shows, and finishes visits.
-6. Clinic administrators review daily booking, arrival, completion, and wait figures.
+1. A signed-in owner creates a business and chooses its type: clinic, college office, salon, repair shop, or other. The creator becomes its business administrator.
+2. The business administrator assigns team roles and publishes service sessions with hours, capacity, typical service time, and an optional price.
+3. A customer chooses a participating business and joins an available same-day queue.
+4. The database allocates tokens atomically and rejects closed, full, past, or duplicate bookings.
+5. Customers follow their token, people ahead, and estimated wait as the queue moves.
+6. Staff check in arrivals, add walk-ins, call the next token, record missed turns, and finish service.
+7. Business administrators review daily booking, arrival, completion, and wait figures.
 
 ## Tech stack
 
@@ -23,35 +24,23 @@ Patients often arrive without knowing how long they will wait. Clinic teams mana
 
 ## Architecture
 
-The browser uses only the Supabase publishable key. Queue operations that need consistent ordering run through authenticated Postgres functions. Row Level Security scopes patient data to its owner and clinic data to assigned staff. Supabase Realtime notifies the patient and staff screens when appointments change.
+The browser uses only the Supabase publishable key. Queue operations that need consistent ordering run through authenticated Postgres functions. Row Level Security scopes customer data to its owner and business data to assigned staff. Supabase Realtime updates customer and staff screens when tokens change.
 
 ```text
-Patient portal / Clinic console
-              ↓
-        Supabase Auth
-              ↓
-RLS-protected tables and queue functions
-              ↓
-     Supabase Realtime
-              ↓
-     Updated queue views
+Customer queue / Business workspace
+                 ↓
+           Supabase Auth
+                 ↓
+   RLS-protected tables and queue functions
+                 ↓
+        Supabase Realtime
+                 ↓
+       Updated queue views
 ```
 
-### Core tables
+The database retains some clinic-oriented table and function names for compatibility with earlier migrations. The user interface and business setup support multiple service types.
 
-| Table | Purpose |
-| --- | --- |
-| `profiles` | Account name, phone, and default patient role |
-| `clinics` | Clinic name, address, and active state |
-| `staff_members` | Clinic assignments and staff roles |
-| `clinic_doctors` | Clinic-managed clinician directory and doctor account link |
-| `clinic_schedules` | Doctor sessions, capacity, hours, and token availability |
-| `appointments` | Online and walk-in tokens with workflow timestamps |
-| `queue_events` | Audit trail for queue status changes |
-| `clinic_settings`, `clinic_closures` | Booking preferences and closure dates |
-| `appointment_notes` | Optional patient-shared visit reason, visible to the assigned doctor |
-
-## Run locally
+## Local setup
 
 ### 1. Install dependencies
 
@@ -61,9 +50,9 @@ npm install
 
 ### 2. Configure Supabase
 
-Create a Supabase project. Enable email and password authentication. Set the local Site URL to `http://localhost:3000` and allow that URL in Redirect URLs.
+Create a Supabase project. Enable email and password authentication. Set the Site URL to your app URL and add its URL pattern to Redirect URLs.
 
-Apply every SQL file in `supabase/migrations/` in filename order. The migrations create the schema, access policies, queue functions, indexes, and doctor directory.
+Apply the SQL files in `supabase/migrations/` in filename order. The migrations create the schema, access policies, queue functions, indexes, service directory, and business types.
 
 ### 3. Set environment variables
 
@@ -84,39 +73,34 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-## First clinic setup
+## First business setup
 
-1. Register an account, then promote it to the platform administrator once in the Supabase SQL Editor:
+1. Register an account and sign in to the business workspace.
+2. Create a business and choose its type, name, and address. The creator becomes its business administrator.
+3. Register team accounts. In workspace settings, assign each account UUID as a front-desk user, service provider, or business administrator.
+4. Add service listings and link team account UUIDs where applicable.
+5. Publish service sessions with dates, hours, capacity, service-time estimates, and optional prices.
 
-```sql
-update public.profiles set role = 'admin' where id = 'registered-account-uuid';
-```
-
-2. Sign in at **For clinics** and create a clinic. The creator becomes its clinic administrator.
-3. Register receptionist and doctor accounts. In the clinic admin screen, assign each account UUID to a clinic role.
-4. Add doctor directory entries and link doctor account UUIDs where applicable.
-5. Publish doctor sessions with dates, hours, capacity, consultation estimates, and fees.
-
-The first account should remain a patient by default. Staff access is assigned through `staff_members`; users cannot grant themselves clinic access from the browser.
+New accounts can use the customer queue or create their own business. Business access is assigned through `staff_members`; users cannot grant themselves access to another business from the browser.
 
 ## Security and limits
 
 - Row Level Security is enabled on the public tables.
-- Patients can read their own bookings and queue status. Staff can read queue data for clinics they belong to.
-- Booking, walk-in registration, status changes, session setup, and clinic setup use database functions that check the signed-in user’s permissions.
+- Customers can read their own tokens and queue status. Staff can read queue data for businesses they belong to.
+- Booking, walk-in registration, status changes, session setup, and business setup use database functions that check the signed-in user’s permissions.
 - Token allocation locks a schedule before incrementing its counter, preventing duplicate token numbers.
 - The application uses a publishable key only. Do not add a service-role key to client-side environment variables.
-- Queue estimates are indicative, not guaranteed. Clinic staff may change the order of care.
-- QueueWise is a student demonstration and has not had independent clinical-safety, privacy, or security review. Do not use it for urgent care or production patient data.
+- Queue estimates are indicative, not guaranteed. Staff may adjust the order when the situation requires it.
+- QueueWise is a student demonstration and has not had independent privacy or security review. Do not use it with sensitive real customer data.
 
-## Deploy
+## Deployment
 
-Deploy to Vercel or another Next.js host. Add the two environment variables in the host settings. Set the deployed URL as the Supabase Site URL and add it to Redirect URLs. Test patient and staff workflows using separate accounts before sharing the deployment.
+The current deployment uses Vercel for the Next.js app and Supabase for backend services. Set the two environment variables in Vercel and configure the deployed URL as the Supabase Site URL and Redirect URL. GitHub pushes to `main` trigger a new Vercel deployment.
 
 ## Demo outline
 
-1. Show the clinic’s doctor session and token capacity.
-2. Book a patient token and show its initial queue position.
-3. Add a walk-in and show the shared token order.
-4. Check the patient in, call the next token, and finish a visit.
-5. Show the patient queue updating and review the daily report.
+1. Create a business and choose a type such as a salon or repair shop.
+2. Publish a service session and token capacity.
+3. Join a customer token and show its starting queue position.
+4. Add a walk-in and show it joining the same queue.
+5. Call the next token, finish service, and show the wait estimate update.
