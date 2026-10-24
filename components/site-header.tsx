@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { QueueWiseMark } from '@/components/queuewise-mark'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export function SiteHeader() {
   return (
@@ -12,6 +13,7 @@ export function SiteHeader() {
         <Link href="/patient">Join a queue</Link>
         <Link href="/doctors">Businesses</Link>
         <Link href="/staff">For businesses</Link>
+        <ThemeToggle compact />
         <Link className="nav-action" href="/login">Sign in</Link>
       </nav>
       <details className="site-menu">
@@ -21,6 +23,7 @@ export function SiteHeader() {
           <Link href="/doctors">Browse businesses</Link>
           <Link href="/staff">Business workspace</Link>
           <Link href="/login">Sign in</Link>
+          <ThemeToggle />
         </nav>
       </details>
     </header>

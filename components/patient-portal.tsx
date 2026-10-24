@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { QueueWiseMark } from '@/components/queuewise-mark'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Appointment, Clinic, QueueStatus, Schedule } from '@/lib/types'
@@ -166,7 +167,7 @@ export function PatientPortal() {
   if (loading) return <p className="page-state">Loading your queue…</p>
   return (
     <div className="portal-layout">
-      <aside className="portal-side"><Link className="wordmark" href="/"><QueueWiseMark className="queuewise-mark" />QueueWise</Link><p>My queue</p><button className="link-button" onClick={signOut}>Sign out</button></aside>
+      <aside className="portal-side"><Link className="wordmark" href="/"><QueueWiseMark className="queuewise-mark" />QueueWise</Link><p>My queue</p><ThemeToggle /><button className="link-button" onClick={signOut}>Sign out</button></aside>
       <main className="portal-main">
         <header className="portal-title"><div><p className="eyebrow">Customer portal</p><h1>Your queue</h1></div><Link className="button button-secondary" href="/staff">Business workspace</Link></header>
         {error && <div className="form-message error" role="alert"><p>{error}</p><button className="text-action" type="button" onClick={() => window.location.reload()}>Try again</button></div>}
