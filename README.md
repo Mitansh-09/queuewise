@@ -1,6 +1,7 @@
 # QueueWise
 
 QueueWise is an appointment and walk-in queue manager for local service businesses. Customers can reserve a token and follow their place in line while teams manage bookings and walk-ins in one shared queue.
+
 Demo Video: https://drive.google.com/drive/folders/1eIcJpSozTgCMrQA-A-sks5p-YOIy99k4?usp=drive_link
 
 Live URL: https://queuewise-xi.vercel.app/
